@@ -13,11 +13,13 @@
 
 using namespace std;
 
-// Declarar una ventana
+// Declarar una ventana y variables
 GLFWwindow* window;
 float posXTriangulo = 0.0f, posYTriangulo = 0.0f;
+float rotacionTriangulo = 0.0f;
 double tiempoActual, tiempoAnterior;
 double velocidadTriangulo = 0.7;
+double velocidadRotacion = 60;
 
 void teclado_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
 	if (action == GLFW_PRESS || GLFW_REPEAT && key == GLFW_KEY_RIGHT) {
@@ -41,37 +43,66 @@ void actualizar() {
     double tiempoDiferencial = tiempoActual - tiempoAnterior;
 
     // Estados para cada tecla
-    int estadoDerecha = glfwGetKey(window, GLFW_KEY_RIGHT);
-    if (estadoDerecha == GLFW_PRESS) {
-        posXTriangulo += velocidadTriangulo * tiempoDiferencial;
-    }
-
+	// Calcular el movimiento dependiendo del angulo de rotacion
     int estadoArriba = glfwGetKey(window, GLFW_KEY_UP);
     if (estadoArriba == GLFW_PRESS) {
-        posYTriangulo += velocidadTriangulo * tiempoDiferencial;
+		posYTriangulo += (velocidadTriangulo * cos(rotacionTriangulo * 3.1416 / 180)) * tiempoDiferencial;
+		posXTriangulo -= (velocidadTriangulo * sin(rotacionTriangulo * 3.1416 / 180)) * tiempoDiferencial;
     }
 
-    int estadoIzquierda = glfwGetKey(window, GLFW_KEY_LEFT);
-    if (estadoIzquierda == GLFW_PRESS) {
-        posXTriangulo -= velocidadTriangulo * tiempoDiferencial;
+	int estadoAbajo = glfwGetKey(window, GLFW_KEY_DOWN);
+	if (estadoAbajo == GLFW_PRESS) {
+		posYTriangulo -= (velocidadTriangulo * cos(rotacionTriangulo * 3.1416 / 180)) * tiempoDiferencial;
+		posXTriangulo += (velocidadTriangulo * sin(rotacionTriangulo * 3.1416 / 180)) * tiempoDiferencial;
+	}
+
+	int estadoIzquierda = glfwGetKey(window, GLFW_KEY_LEFT);
+	if (estadoIzquierda == GLFW_PRESS) {
+		rotacionTriangulo += velocidadRotacion * tiempoDiferencial;
+	}
+
+    int estadoDerecha = glfwGetKey(window, GLFW_KEY_RIGHT);
+    if (estadoDerecha == GLFW_PRESS) {
+		rotacionTriangulo -= velocidadRotacion * tiempoDiferencial;
     }
 
-    int estadoAbajo = glfwGetKey(window, GLFW_KEY_DOWN);
-    if (estadoAbajo == GLFW_PRESS) {
-        posYTriangulo -= velocidadTriangulo * tiempoDiferencial;
-    }
+	// Reset angulo
+	if (rotacionTriangulo >= 360) {
+		rotacionTriangulo = 0;
+	}
+
+	if (rotacionTriangulo <= -360) {
+		rotacionTriangulo = 0;
+	}
 
     tiempoAnterior = tiempoActual;
 }
 
 void dibujar() {
 	glPushMatrix();
+	
+	// Loopear al triangulo al llegar limite de la ventana
+	if (posXTriangulo >= 1.15) {
+		posXTriangulo = -1.1;
+	}
+	if (posXTriangulo <= -1.15) {
+		posXTriangulo = 1.1;
+	}
+
+	if (posYTriangulo >= 1.15) {
+		posYTriangulo = -1.1;
+	}
+	if (posYTriangulo <= -1.15) {
+		posYTriangulo = 1.1;
+	}
 
 	glTranslatef(posXTriangulo, posYTriangulo, 0.0f);
 
+	glRotatef(rotacionTriangulo, 0, 0, 1);  // rotate your object
+
 	glBegin(GL_TRIANGLES);
 
-	glColor3f(0.2f, 0.6f, 0.1f);
+	glColor3f(0.2f, 0.3f, 0.6f);
 
 	glVertex3f(0.0f, 0.15f, 0.0f);
 	glVertex3f(0.15f, -0.15f, 0.0f);
@@ -119,9 +150,6 @@ int main()
 
 	// Establecemos que con cada evento de teclado se llama a la función teclado_callback
 	// glfwSetKeyCallback(window, teclado_callback);
-
-    tiempoActual = glfwGetTime();
-    tiempoAnterior = tiempoActual;
 
 	// Ciclo de dibujo (Draw loop)
 	while (!glfwWindowShouldClose(window)) {
